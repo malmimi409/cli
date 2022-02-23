@@ -137,27 +137,6 @@ func (err httpError) Error() string {
 	return fmt.Sprintf("Invalid search query %q.\n%s", query, err.Errors[0].Message)
 }
 
-func nextPage(resp *http.Response) (page int) {
-	page = 0
-	if resp == nil {
-		page = 1
-		return
-	}
-	for _, m := range linkRE.FindAllStringSubmatch(resp.Header.Get("Link"), -1) {
-		if !(len(m) > 2 && m[2] == "next") {
-			continue
-		}
-		p := pageRE.FindStringSubmatch(m[1])
-		if len(p) == 3 {
-			i, err := strconv.Atoi(p[2])
-			if err == nil {
-				page = i
-			}
-		}
-	}
-	return
-}
-
 func handleHTTPError(resp *http.Response) error {
 	httpError := httpError{
 		RequestURL: resp.Request.URL,
@@ -175,6 +154,25 @@ func handleHTTPError(resp *http.Response) error {
 		return err
 	}
 	return httpError
+}
+
+func nextPage(resp *http.Response) (page int) {
+	if resp == nil {
+		return 1
+	}
+	for _, m := range linkRE.FindAllStringSubmatch(resp.Header.Get("Link"), -1) {
+		if !(len(m) > 2 && m[2] == "next") {
+			continue
+		}
+		p := pageRE.FindStringSubmatch(m[1])
+		if len(p) == 3 {
+			i, err := strconv.Atoi(p[2])
+			if err == nil {
+				return i
+			}
+		}
+	}
+	return 0
 }
 
 func min(a, b int) int {

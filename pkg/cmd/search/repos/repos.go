@@ -1,8 +1,6 @@
 package repos
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,7 +8,6 @@ import (
 
 	"github.com/cli/cli/v2/internal/config"
 	"github.com/cli/cli/v2/pkg/cmdutil"
-	"github.com/cli/cli/v2/pkg/export"
 	"github.com/cli/cli/v2/pkg/iostreams"
 	"github.com/cli/cli/v2/pkg/search"
 	"github.com/cli/cli/v2/pkg/text"
@@ -19,15 +16,13 @@ import (
 )
 
 type ReposOptions struct {
-	Browser      cmdutil.Browser
-	Config       func() (config.Config, error)
-	Exporter     cmdutil.Exporter
-	GoTemplate   string
-	HttpClient   func() (*http.Client, error)
-	IO           *iostreams.IOStreams
-	JqExpression string
-	Query        search.Query
-	WebMode      bool
+	Browser    cmdutil.Browser
+	Config     func() (config.Config, error)
+	Exporter   cmdutil.Exporter
+	HttpClient func() (*http.Client, error)
+	IO         *iostreams.IOStreams
+	Query      search.Query
+	WebMode    bool
 }
 
 func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Command {
@@ -44,13 +39,6 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
 		Short: "Search repositories",
 		RunE: func(c *cobra.Command, args []string) error {
 			opts.Query.Keywords = args
-			err := cmdutil.MutuallyExclusive("expected exactly one of `--jq`, `--template`, or `--web`",
-				opts.GoTemplate != "",
-				opts.JqExpression != "",
-				opts.WebMode)
-			if err != nil {
-				return err
-			}
 			if opts.Query.Limit < 1 || opts.Query.Limit > 1000 {
 				return cmdutil.FlagErrorf("`--limit` must be between 1 and 1000")
 			}
@@ -62,8 +50,7 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
 	}
 
 	// Output flags
-	cmd.Flags().StringVarP(&opts.GoTemplate, "template", "t", "", "Format JSON output using a Go template")
-	cmd.Flags().StringVarP(&opts.JqExpression, "jq", "q", "", "Format JSON output using a jq `expression`")
+	cmdutil.AddJSONFlags(cmd, &opts.Exporter, search.RepositoryFields)
 	cmd.Flags().BoolVarP(&opts.WebMode, "web", "w", false, "Open the query in the web browser")
 
 	// Query parameter flags
@@ -130,32 +117,10 @@ func reposRun(opts *ReposOptions) error {
 	} else {
 		fmt.Fprintf(opts.IO.ErrOut, "failed to start pager: %v\n", err)
 	}
-	if opts.JqExpression != "" {
-		j, err := json.Marshal(result.Items)
-		if err != nil {
-			return err
-		}
-		err = export.FilterJSON(io.Out, bytes.NewReader(j), opts.JqExpression)
-		if err != nil {
-			return err
-		}
-	} else if opts.GoTemplate != "" {
-		t := export.NewTemplate(opts.IO, opts.GoTemplate)
-		j, err := json.Marshal(result.Items)
-		if err != nil {
-			return err
-		}
-		err = t.Execute(bytes.NewReader(j))
-		if err != nil {
-			return err
-		}
-	} else {
-		err := displayResults(opts.IO, result)
-		if err != nil {
-			return err
-		}
+	if opts.Exporter != nil {
+		return opts.Exporter.Write(opts.IO, result.Items)
 	}
-	return nil
+	return displayResults(opts.IO, result)
 }
 
 func displayResults(io *iostreams.IOStreams, results search.RepositoriesResult) error {

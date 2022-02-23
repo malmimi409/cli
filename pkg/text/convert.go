@@ -2,13 +2,11 @@ package text
 
 import "unicode"
 
-// Copied from:
-// https://github.com/asaskevich/govalidator/blob/f21760c49a8d602d863493de796926d2a5c1138d/utils.go#L107
+// Copied from: https://github.com/asaskevich/govalidator
 func CamelToKebab(str string) string {
 	var output []rune
 	var segment []rune
 	for _, r := range str {
-		// not treat number as separate segment
 		if !unicode.IsLower(r) && string(r) != "-" && !unicode.IsNumber(r) {
 			output = addSegment(output, segment)
 			segment = nil

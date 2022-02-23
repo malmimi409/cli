@@ -1,6 +1,20 @@
 package search
 
-import "time"
+import (
+	"reflect"
+	"strings"
+	"time"
+)
+
+var RepositoryFields = []string{
+	"archived",
+	"createdAt",
+	"description",
+	"fork",
+	"fullName",
+	"private",
+	"pushedAt",
+}
 
 type RepositoriesResult struct {
 	IncompleteResults bool         `json:"incomplete_results"`
@@ -110,4 +124,20 @@ type User struct {
 	StarredURL        string `json:"starred_url"`
 	SubscriptionsURL  string `json:"subscriptions_url"`
 	URL               string `json:"url"`
+}
+
+func (repo Repository) ExportData(fields []string) map[string]interface{} {
+	v := reflect.ValueOf(repo)
+	data := map[string]interface{}{}
+	for _, f := range fields {
+		sf := fieldByName(v, f)
+		data[f] = sf.Interface()
+	}
+	return data
+}
+
+func fieldByName(v reflect.Value, field string) reflect.Value {
+	return v.FieldByNameFunc(func(s string) bool {
+		return strings.EqualFold(field, s)
+	})
 }
