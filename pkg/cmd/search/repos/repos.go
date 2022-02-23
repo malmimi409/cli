@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -18,14 +17,6 @@ import (
 	"github.com/cli/cli/v2/utils"
 	"github.com/spf13/cobra"
 )
-
-// These regexs are not perfect and mostly used to give some input validation.
-// They are more permissive than the server so we can provide early feedback
-// to the user in most cases but there are some inputs that will pass the
-// regexs and then be rejected by the server.
-var rangeRE = regexp.MustCompile(`^(>|>=|<|<=|\*\.\.)?\d+(\.\.(\*|\d+))?$`)
-var dateTime = `(\d|-|\+|:|T)+`
-var dateTimeRangeRE = regexp.MustCompile(fmt.Sprintf(`^(>|>=|<|<=|\*\.\.)?%s(\.\.(\*|%s))?$`, dateTime, dateTime))
 
 type ReposOptions struct {
 	Browser      cmdutil.Browser
@@ -82,26 +73,24 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
 
 	// Query qualifier flags
 	cmdutil.NilBoolFlag(cmd, &opts.Query.Qualifiers.Archived, "archived", "", "Filter based on archive state")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.Created, "created", "", "", dateTimeRangeRE, "Filter based on created at date")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.Followers, "followers", "", "", rangeRE, "Filter based on number of followers")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.Created, "created", "", "Filter based on created at date")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.Followers, "followers", "", "Filter based on number of followers")
 	cmdutil.StringEnumFlag(cmd, &opts.Query.Qualifiers.Fork, "include-forks", "", "", []string{"false", "true", "only"}, "Include forks in search")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.Forks, "forks", "", "", rangeRE, "Filter on number of forks")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.GoodFirstIssues,
-		"good-first-issues", "", "", rangeRE, "Filter on number of issues with the 'good first issue' label")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.HelpWantedIssues,
-		"help-wanted-issues", "", "", rangeRE, "Filter on number of issues with the 'help wanted' label")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.Forks, "forks", "", "Filter on number of forks")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.GoodFirstIssues, "good-first-issues", "", "Filter on number of issues with the 'good first issue' label")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.HelpWantedIssues, "help-wanted-issues", "", "Filter on number of issues with the 'help wanted' label")
 	cmdutil.StringSliceEnumFlag(cmd, &opts.Query.Qualifiers.In,
 		"in", "", nil, []string{"name", "description", "readme"}, "Restrict search to the name, description, or README file")
 	cmd.Flags().StringSliceVar(&opts.Query.Qualifiers.Language, "language", nil, "Filter based on the coding language")
 	cmd.Flags().StringSliceVar(&opts.Query.Qualifiers.License, "license", nil, "Filter based on license type")
 	cmdutil.NilBoolFlag(cmd, &opts.Query.Qualifiers.Mirror, "mirror", "", "Filter based on mirror state")
 	cmd.Flags().StringVar(&opts.Query.Qualifiers.Org, "org", "", "Filter on organization")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.Pushed, "updated", "", "", dateTimeRangeRE, "Filter on last updated at date")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.Pushed, "updated", "", "Filter on last updated at date")
 	cmd.Flags().StringVar(&opts.Query.Qualifiers.Repo, "repo", "", "Filter on repository name")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.Size, "size", "", "", rangeRE, "Filter on a size range, in kilobytes")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.Stars, "stars", "", "", rangeRE, "Filter on number of stars")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.Size, "size", "", "Filter on a size range, in kilobytes")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.Stars, "stars", "", "Filter on number of stars")
 	cmd.Flags().StringSliceVar(&opts.Query.Qualifiers.Topic, "topic", nil, "Filter on topic")
-	cmdutil.StringRegexpFlag(cmd, &opts.Query.Qualifiers.Topics, "number-topics", "", "", rangeRE, "Filter on number of topics")
+	cmd.Flags().StringVar(&opts.Query.Qualifiers.Topics, "number-topics", "", "Filter on number of topics")
 	cmd.Flags().StringVar(&opts.Query.Qualifiers.User, "user", "", "Filter based on user")
 	cmdutil.StringEnumFlag(cmd, &opts.Query.Qualifiers.Is, "visibility", "", "", []string{"public", "private"}, "Filter based on visibility")
 

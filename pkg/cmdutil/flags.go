@@ -2,7 +2,6 @@ package cmdutil
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -42,13 +41,6 @@ func StringSliceEnumFlag(cmd *cobra.Command, p *[]string, name, shorthand string
 	_ = cmd.RegisterFlagCompletionFunc(name, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return options, cobra.ShellCompDirectiveNoFileComp
 	})
-	return f
-}
-
-func StringRegexpFlag(cmd *cobra.Command, p *string, name, shorthand, defaultValue string, re *regexp.Regexp, usage string) *pflag.Flag {
-	*p = defaultValue
-	val := &regexpValue{value: p, re: re}
-	f := cmd.Flags().VarPF(val, name, shorthand, usage)
 	return f
 }
 
@@ -109,27 +101,6 @@ func (b *boolValue) Type() string {
 
 func (b *boolValue) IsBoolFlag() bool {
 	return true
-}
-
-type regexpValue struct {
-	value *string
-	re    *regexp.Regexp
-}
-
-func (r *regexpValue) Set(value string) error {
-	if !r.re.MatchString(value) {
-		return fmt.Errorf("%q does not match regexp format", value)
-	}
-	*r.value = value
-	return nil
-}
-
-func (r *regexpValue) String() string {
-	return *r.value
-}
-
-func (r *regexpValue) Type() string {
-	return "string"
 }
 
 type enumValue struct {
