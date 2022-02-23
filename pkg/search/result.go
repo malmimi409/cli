@@ -2,39 +2,6 @@ package search
 
 import "time"
 
-type Qualifiers struct {
-	Archived         *bool
-	Created          string
-	Followers        string
-	Fork             string
-	Forks            string
-	GoodFirstIssues  string
-	HelpWantedIssues string
-	In               []string
-	Is               string
-	Language         []string
-	License          []string
-	Mirror           *bool
-	Org              string
-	Pushed           string
-	Repo             string
-	Size             string
-	Stars            string
-	Topic            []string
-	Topics           string
-	User             string
-}
-
-type Query struct {
-	Keywords   []string
-	Kind       string
-	Limit      int
-	Order      string
-	Page       int
-	Qualifiers Qualifiers
-	Sort       string
-}
-
 type RepositoriesResult struct {
 	IncompleteResults bool         `json:"incomplete_results"`
 	Items             []Repository `json:"items"`
@@ -143,10 +110,4 @@ type User struct {
 	StarredURL        string `json:"starred_url"`
 	SubscriptionsURL  string `json:"subscriptions_url"`
 	URL               string `json:"url"`
-}
-
-type Searcher interface {
-	Repositories(Query) (RepositoriesResult, error)
-	String(Query) string
-	URL(Query) string
 }

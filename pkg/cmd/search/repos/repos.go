@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/cli/cli/v2/internal/config"
-	"github.com/cli/cli/v2/pkg/cmd/search/shared"
 	"github.com/cli/cli/v2/pkg/cmdutil"
 	"github.com/cli/cli/v2/pkg/export"
 	"github.com/cli/cli/v2/pkg/iostreams"
@@ -123,7 +122,7 @@ func reposRun(opts *ReposOptions) error {
 	if err != nil {
 		return err
 	}
-	searcher := shared.NewSearcher(client, host)
+	searcher := search.NewSearcher(client, host)
 	if opts.WebMode {
 		url := searcher.URL(opts.Query)
 		if io.IsStdoutTTY() {
