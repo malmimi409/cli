@@ -22,6 +22,7 @@ type ReposOptions struct {
 	HttpClient func() (*http.Client, error)
 	IO         *iostreams.IOStreams
 	Query      search.Query
+	Searcher   search.Searcher
 	WebMode    bool
 }
 
@@ -31,7 +32,7 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
 		Config:     f.Config,
 		HttpClient: f.HttpClient,
 		IO:         f.IOStreams,
-		Query:      search.Query{Kind: "repositories"},
+		Query:      search.Query{Kind: search.KindRepositories},
 	}
 
 	cmd := &cobra.Command{
@@ -86,41 +87,43 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
 
 func reposRun(opts *ReposOptions) error {
 	io := opts.IO
-	cfg, err := opts.Config()
-	if err != nil {
-		return err
+	if opts.Searcher == nil {
+		cfg, err := opts.Config()
+		if err != nil {
+			return err
+		}
+		host, err := cfg.DefaultHost()
+		if err != nil {
+			return err
+		}
+		client, err := opts.HttpClient()
+		if err != nil {
+			return err
+		}
+		opts.Searcher = search.NewSearcher(client, host)
 	}
-	host, err := cfg.DefaultHost()
-	if err != nil {
-		return err
-	}
-	client, err := opts.HttpClient()
-	if err != nil {
-		return err
-	}
-	searcher := search.NewSearcher(client, host)
 	if opts.WebMode {
-		url := searcher.URL(opts.Query)
+		url := opts.Searcher.URL(opts.Query)
 		if io.IsStdoutTTY() {
 			fmt.Fprintf(io.ErrOut, "Opening %s in your browser.\n", utils.DisplayURL(url))
 		}
 		return opts.Browser.Browse(url)
 	}
-	opts.IO.StartProgressIndicator()
-	result, err := searcher.Repositories(opts.Query)
-	opts.IO.StopProgressIndicator()
+	io.StartProgressIndicator()
+	result, err := opts.Searcher.Repositories(opts.Query)
+	io.StopProgressIndicator()
 	if err != nil {
 		return err
 	}
-	if err := opts.IO.StartPager(); err == nil {
-		defer opts.IO.StopPager()
+	if err := io.StartPager(); err == nil {
+		defer io.StopPager()
 	} else {
-		fmt.Fprintf(opts.IO.ErrOut, "failed to start pager: %v\n", err)
+		fmt.Fprintf(io.ErrOut, "failed to start pager: %v\n", err)
 	}
 	if opts.Exporter != nil {
-		return opts.Exporter.Write(opts.IO, result.Items)
+		return opts.Exporter.Write(io, result.Items)
 	}
-	return displayResults(opts.IO, result)
+	return displayResults(io, result)
 }
 
 func displayResults(io *iostreams.IOStreams, results search.RepositoriesResult) error {

@@ -3,9 +3,14 @@ package search
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/cli/cli/v2/pkg/text"
+)
+
+const (
+	KindRepositories = "repositories"
 )
 
 type Query struct {
@@ -42,10 +47,12 @@ type Qualifiers struct {
 }
 
 func (q Query) String() string {
-	all := q.Keywords
+	var all []string
 	for k, v := range q.Qualifiers.Map() {
 		all = append(all, fmt.Sprintf("%s:%s", k, v))
 	}
+	sort.Strings(all)
+	all = append(q.Keywords, all...)
 	for k, v := range all {
 		all[k] = quote(v)
 	}

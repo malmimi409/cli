@@ -23,6 +23,7 @@ var linkRE = regexp.MustCompile(`<([^>]+)>;\s*rel="([^"]+)"`)
 var pageRE = regexp.MustCompile(`(\?|&)page=(\d*)`)
 var jsonTypeRE = regexp.MustCompile(`[/+]json($|;)`)
 
+//go:generate moq -rm -out searcher_mock.go . Searcher
 type Searcher interface {
 	Repositories(Query) (RepositoriesResult, error)
 	URL(Query) string
@@ -130,7 +131,7 @@ func (s searcher) URL(query Query) string {
 }
 
 func (err httpError) Error() string {
-	if err.StatusCode != 422 {
+	if err.StatusCode != 422 || len(err.Errors) == 0 {
 		return fmt.Sprintf("HTTP %d: %s (%s)", err.StatusCode, err.Message, err.RequestURL)
 	}
 	query := strings.TrimSpace(err.RequestURL.Query().Get("q"))
