@@ -141,6 +141,9 @@ func (e *enumMultiValue) Set(value string) error {
 }
 
 func (e *enumMultiValue) String() string {
+	if len(*e.value) == 0 {
+		return ""
+	}
 	return fmt.Sprintf("{%s}", strings.Join(*e.value, ", "))
 }
 

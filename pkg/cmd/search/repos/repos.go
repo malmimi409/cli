@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/v2/internal/config"
 	"github.com/cli/cli/v2/pkg/cmdutil"
 	"github.com/cli/cli/v2/pkg/iostreams"
@@ -37,7 +38,33 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
 
 	cmd := &cobra.Command{
 		Use:   "repos [<query>]",
-		Short: "Search repositories",
+		Short: "Search for repositories",
+		Long: heredoc.Doc(`
+      Search for repositories on GitHub.
+
+      The command supports constructing queries using the GitHub search syntax,
+      using the parameter and qualifier flags, or a combination of the two.
+    `),
+		Example: heredoc.Doc(`
+      # search repositories matching set of keywords "cli" and "golang"
+      $ gh search repos cli golang
+
+      # search repositories matching phrase "cli golang"
+      $ gh search repos "cli golang"
+
+      # search repositories in the cli organization
+      $ gh search repos --org=cli
+
+      # search repositories with a set of topics
+      $ gh search repos --topic="cli, terminal"
+
+      # search repositories by coding language and number of good first issues
+      $ gh search repos --language=golang --good-first-issues=">=10"
+
+      # search repositories by keyword "cli", number of forks, and number of stars
+      # using GitHub search syntax
+      $ gh search repos cli forks:"<100" stars:">=1000"
+    `),
 		RunE: func(c *cobra.Command, args []string) error {
 			opts.Query.Keywords = args
 			if opts.Query.Limit < 1 || opts.Query.Limit > 1000 {
@@ -52,23 +79,22 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
 
 	// Output flags
 	cmdutil.AddJSONFlags(cmd, &opts.Exporter, search.RepositoryFields)
-	cmd.Flags().BoolVarP(&opts.WebMode, "web", "w", false, "Open the query in the web browser")
+	cmd.Flags().BoolVarP(&opts.WebMode, "web", "w", false, "Open the search query in the web browser")
 
 	// Query parameter flags
 	cmd.Flags().IntVarP(&opts.Query.Limit, "limit", "L", 30, "Maximum number of repositories to fetch")
-	cmdutil.StringEnumFlag(cmd, &opts.Query.Order, "order", "", "", []string{"asc", "desc"}, "Order of repositories returned, ignored unless '--sort' is specified")
-	cmdutil.StringEnumFlag(cmd, &opts.Query.Sort, "sort", "", "", []string{"forks", "help-wanted-issues", "stars", "updated"}, "Sorts the repositories by stars, forks, help-wanted-issues, or updated")
+	cmdutil.StringEnumFlag(cmd, &opts.Query.Order, "order", "", "", []string{"asc", "desc"}, "Order of repositories returned, ignored unless '--sort' flag is specified")
+	cmdutil.StringEnumFlag(cmd, &opts.Query.Sort, "sort", "", "", []string{"forks", "help-wanted-issues", "stars", "updated"}, "Sort fetched repositories")
 
 	// Query qualifier flags
 	cmdutil.NilBoolFlag(cmd, &opts.Query.Qualifiers.Archived, "archived", "", "Filter based on archive state")
 	cmd.Flags().StringVar(&opts.Query.Qualifiers.Created, "created", "", "Filter based on created at date")
 	cmd.Flags().StringVar(&opts.Query.Qualifiers.Followers, "followers", "", "Filter based on number of followers")
-	cmdutil.StringEnumFlag(cmd, &opts.Query.Qualifiers.Fork, "include-forks", "", "", []string{"false", "true", "only"}, "Include forks in search")
+	cmdutil.StringEnumFlag(cmd, &opts.Query.Qualifiers.Fork, "include-forks", "", "", []string{"false", "true", "only"}, "Include forks in fetched repositories")
 	cmd.Flags().StringVar(&opts.Query.Qualifiers.Forks, "forks", "", "Filter on number of forks")
 	cmd.Flags().StringVar(&opts.Query.Qualifiers.GoodFirstIssues, "good-first-issues", "", "Filter on number of issues with the 'good first issue' label")
 	cmd.Flags().StringVar(&opts.Query.Qualifiers.HelpWantedIssues, "help-wanted-issues", "", "Filter on number of issues with the 'help wanted' label")
-	cmdutil.StringSliceEnumFlag(cmd, &opts.Query.Qualifiers.In,
-		"in", "", nil, []string{"name", "description", "readme"}, "Restrict search to the name, description, or README file")
+	cmdutil.StringSliceEnumFlag(cmd, &opts.Query.Qualifiers.In, "in", "", nil, []string{"name", "description", "readme"}, "Restrict search to specific part of repository")
 	cmd.Flags().StringSliceVar(&opts.Query.Qualifiers.Language, "language", nil, "Filter based on the coding language")
 	cmd.Flags().StringSliceVar(&opts.Query.Qualifiers.License, "license", nil, "Filter based on license type")
 	cmdutil.NilBoolFlag(cmd, &opts.Query.Qualifiers.Mirror, "mirror", "", "Filter based on mirror state")

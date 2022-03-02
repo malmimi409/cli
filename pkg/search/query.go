@@ -49,13 +49,14 @@ type Qualifiers struct {
 func (q Query) String() string {
 	var all []string
 	for k, v := range q.Qualifiers.Map() {
-		all = append(all, fmt.Sprintf("%s:%s", k, v))
+		all = append(all, fmt.Sprintf("%s:%s", k, quote(v)))
 	}
 	sort.Strings(all)
-	all = append(q.Keywords, all...)
-	for k, v := range all {
-		all[k] = quote(v)
+	quotedKeywords := q.Keywords
+	for i, v := range quotedKeywords {
+		quotedKeywords[i] = quote(v)
 	}
+	all = append(quotedKeywords, all...)
 	return strings.Join(all, " ")
 }
 
@@ -96,10 +97,6 @@ func (q Qualifiers) Map() map[string]string {
 
 func quote(k string) string {
 	if strings.ContainsAny(k, " \"\t\r\n") {
-		if strings.Contains(k, ":") {
-			z := strings.SplitN(k, ":", 2)
-			return fmt.Sprintf("%s:%q", z[0], z[1])
-		}
 		return fmt.Sprintf("%q", k)
 	}
 	return k

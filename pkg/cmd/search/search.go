@@ -11,10 +11,7 @@ func NewCmdSearch(f *cmdutil.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "search <command>",
 		Short: "Search for repositories, issues, pull requests and users",
-		Long:  "Search through various entities across the GitHub platform.",
-		Annotations: map[string]string{
-			"IsCore": "true",
-		},
+		Long:  "Search across all of GitHub.",
 	}
 
 	cmd.AddCommand(searchReposCmd.NewCmdRepos(f, nil))
