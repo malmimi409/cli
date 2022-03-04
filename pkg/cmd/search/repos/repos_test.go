@@ -23,9 +23,10 @@ func TestNewCmdRepos(t *testing.T) {
 		errMsg  string
 	}{
 		{
-			name:   "no arguments",
-			input:  "",
-			output: ReposOptions{Query: search.Query{Keywords: []string{}, Kind: "repositories", Limit: 30}},
+			name:    "no arguments",
+			input:   "",
+			wantErr: true,
+			errMsg:  "specify search keywords or flags",
 		},
 		{
 			name:  "keyword arguments",

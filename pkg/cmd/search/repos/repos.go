@@ -66,6 +66,9 @@ func NewCmdRepos(f *cmdutil.Factory, runF func(*ReposOptions) error) *cobra.Comm
       $ gh search repos cli forks:"<100" stars:">=1000"
     `),
 		RunE: func(c *cobra.Command, args []string) error {
+			if len(args) == 0 && c.Flags().NFlag() == 0 {
+				return cmdutil.FlagErrorf("specify search keywords or flags")
+			}
 			opts.Query.Keywords = args
 			if opts.Query.Limit < 1 || opts.Query.Limit > 1000 {
 				return cmdutil.FlagErrorf("`--limit` must be between 1 and 1000")
